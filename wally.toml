@@ -12,7 +12,6 @@ exclude = ["**"]
 include = ["src", "src/**", "wally.toml", "wally.lock", "default.project.json", "LICENSE", "README.md"]
 
 [dependencies]
-react = "jsdotlua/react@17.2.1"
 
 [server-dependencies]
 
