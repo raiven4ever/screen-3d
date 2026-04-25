@@ -28,7 +28,7 @@ This package includes a Wally manifest:
 
 ```toml
 [dependencies]
-screen3d = "raiven4ever/screen-3d@0.1.0"
+screen3d = "raiven4ever/screen-3d@0.1.1"
 ```
 
 Install dependencies with Wally, then require the package from your project's package location.
@@ -60,17 +60,19 @@ end
 
 `Component3D:Enable()` moves the `GuiObject` into a `SurfaceGui`. `Component3D:Update()` refreshes its canvas size, backing part size, and world-space transform.
 
-Unlike upstream, components do not create their own `RenderStepped` connections. To match the original automatic behavior, call `Update()` from one shared `RenderStepped` connection:
+Unlike upstream, components do not create their own `RenderStepped` connections. In practice, you'll usually update indexed components from one shared connection. `Component3D:Update()` exits early when the component is not enabled, so it is safe to call for every indexed component:
 
 ```lua
 local RunService = game:GetService("RunService")
 
 RunService.RenderStepped:Connect(function()
-	if component_3d then
-		component_3d:Update()
+	for _, component in screen_3d.PartIndex do
+		component:Update()
 	end
 end)
 ```
+
+If you want one specific component later, you can still grab it directly with `screen_3d:GetComponent3D(gui_object)`.
 
 Use `Component3D:Disable()` to stop projection and restore the object to its 2D parent.
 
