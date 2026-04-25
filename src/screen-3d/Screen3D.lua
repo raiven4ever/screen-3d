@@ -34,6 +34,12 @@ function Screen3D.new(screen_gui: ScreenGui, display_distance: number): Screen3D
 		if added_component:IsA("GuiObject") then
 			part_index[added_component] = Component3D.new(added_component, this)
 		end
+
+		for _, component_2d in added_component:GetDescendants() do
+			if component_2d:IsA("GuiObject") and not part_index[component_2d] then
+				part_index[component_2d] = Component3D.new(component_2d, this)
+			end
+		end
 	end)
 
 	return this

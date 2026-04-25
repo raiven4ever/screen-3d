@@ -4,6 +4,14 @@ Screen3D projects Roblox `ScreenGui` interfaces into 3D space. It lets you keep 
 
 This repository is a fork of [CatGuyMoment/Screen3D](https://github.com/CatGuyMoment/Screen3D), originally introduced in the Roblox Developer Forum post [Screen3D - A 3D UI framework that just works](https://devforum.roblox.com/t/screen3d-a-3d-ui-framework-that-just-works/3273671).
 
+## Purpose
+
+Screen3D is the original framework: it owns the projection logic and defines how everything works.
+
+This repo is a fork focused on packaging and polish. It wraps Screen3D as a typed Luau dependency for Wally, cleans up naming and formatting, documents the public API, and exports the Screen3D and Component3D types from the package root.
+
+The original is the source of truth; this is just a better way to consume it.
+
 ## What It Does
 
 - Creates a `Screen3D` object from a `ScreenGui`
@@ -12,6 +20,7 @@ This repository is a fork of [CatGuyMoment/Screen3D](https://github.com/CatGuyMo
 - Supports rotating and moving projected UI through `CFrame` offsets
 - Supports nested projected UI objects
 - Lets 2D and 3D UI objects coexist in the same hierarchy
+- Lets you choose when projected components update
 
 ## Installation
 
@@ -45,10 +54,25 @@ local component_3d = screen_3d:GetComponent3D(frame)
 
 if component_3d then
 	component_3d:Enable()
+	component_3d:Update()
 end
 ```
 
-`Component3D:Enable()` moves the `GuiObject` into a `SurfaceGui` and starts updating its projected world-space transform. Use `Component3D:Disable()` to stop projection and restore the object to its 2D parent.
+`Component3D:Enable()` moves the `GuiObject` into a `SurfaceGui`. `Component3D:Update()` refreshes its canvas size, backing part size, and world-space transform.
+
+Unlike upstream, components do not create their own `RenderStepped` connections. To match the original automatic behavior, call `Update()` from one shared `RenderStepped` connection:
+
+```lua
+local RunService = game:GetService("RunService")
+
+RunService.RenderStepped:Connect(function()
+	if component_3d then
+		component_3d:Update()
+	end
+end)
+```
+
+Use `Component3D:Disable()` to stop projection and restore the object to its 2D parent.
 
 ## Offsets
 
@@ -61,6 +85,7 @@ local component_3d = screen_3d:GetComponent3D(frame)
 if component_3d then
 	component_3d:Enable()
 	component_3d.Offset = CFrame.Angles(0, math.rad(10), 0)
+	component_3d:Update()
 end
 ```
 
@@ -72,6 +97,7 @@ local RunService = game:GetService("RunService")
 RunService.RenderStepped:Connect(function()
 	if component_3d then
 		component_3d.Offset = CFrame.Angles(0, math.sin(os.clock()) / 2, 0)
+		component_3d:Update()
 	end
 end)
 ```
@@ -81,6 +107,7 @@ You can combine position and rotation to create an indented or angled panel:
 ```lua
 if component_3d then
 	component_3d.Offset = CFrame.new(0, 0, -0.1) * CFrame.Angles(0, math.rad(-6), 0)
+	component_3d:Update()
 end
 ```
 
@@ -100,6 +127,8 @@ if frame_3d and inner_3d then
 	inner_3d:Enable()
 
 	inner_3d.Offset = CFrame.Angles(0, math.rad(25), 0)
+	frame_3d:Update()
+	inner_3d:Update()
 end
 ```
 
@@ -132,6 +161,7 @@ local screen_3d = Screen3D.new(screen_gui, display_distance)
 ### `Component3D`
 
 - `component_3d:Enable()` starts projection
+- `component_3d:Update()` refreshes the projected canvas size, part size, and transform
 - `component_3d:Disable()` stops projection
 - `component_3d:EnableCompatibility()` enables wrapper-frame compatibility behavior for nested layouts
 - `component_3d.Offset` controls local projected rotation and position
@@ -141,13 +171,15 @@ local screen_3d = Screen3D.new(screen_gui, display_distance)
 ## Notes
 
 - Projection is opt-in for performance: creating `Screen3D` only indexes objects.
+- Projection updates are manual: use one shared `RenderStepped` connection when you want continuous tracking.
+- Manual updates avoid creating one `RenderStepped` connection per enabled component.
 - `Offset` pivots around the original UI object's `AnchorPoint`.
 - For angled corner panels, set the UI object's `AnchorPoint` to the pivot you want before enabling projection.
 - True curved GUI is not provided by this module; the original forum thread discusses Roblox engine limitations around curvature.
 
 ## Differences From The Original Files
 
-This fork is based on the original author's `Component3D.luau`, `Definitions.luau`, and `init.luau`. The runtime behavior is intentionally very close to the original.
+This fork is based on the original author's `Component3D.luau`, `Definitions.luau`, and `init.luau`, with manual update behavior inspired by [Contrastual/Screen3D](https://github.com/Contrastual/Screen3D).
 
 Main differences:
 
@@ -156,6 +188,7 @@ Main differences:
 - Types were rewritten as plain exported object-shape types and documented there.
 - Class/table names and public fields use PascalCase conventions.
 - Formatting and comments were cleaned up.
+- `Component3D` objects update through explicit `Component3D:Update()` calls instead of one automatic `RenderStepped` connection per component.
 - A duplicate `GetStudsScreenSize` call in `UDim2ToCFrame` was removed.
 - Wally metadata, licensing, and this README were added for packaging.
 
@@ -164,5 +197,7 @@ Main differences:
 Original project: [CatGuyMoment/Screen3D](https://github.com/CatGuyMoment/Screen3D)
 
 Original DevForum resource: [Screen3D - A 3D UI framework that just works](https://devforum.roblox.com/t/screen3d-a-3d-ui-framework-that-just-works/3273671)
+
+Manual update behavior inspired by [Contrastual/Screen3D](https://github.com/Contrastual/Screen3D).
 
 This fork is maintained under `raiven4ever/screen-3d`.

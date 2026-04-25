@@ -50,6 +50,8 @@ export type Component3D = {
 	Component2D: GuiObject?,
 	--- SurfaceGui currently hosting the GuiObject while enabled.
 	SurfaceGui: SurfaceGui?,
+	--- Anchored part used as the SurfaceGui adornee while enabled.
+	SurfacePart: BasePart?,
 
 	--- Original 2D GuiObject parent, when the object is nested.
 	Parent2D: GuiObject?,
@@ -68,12 +70,14 @@ export type Component3D = {
 	--- Current canvas size used by this object's SurfaceGui.
 	ViewportSize: Vector2,
 
-	--- Render-step binding name used while this object is enabled.
-	Conn: string?,
-
 	--- Starts projection by moving the GuiObject into a SurfaceGui.
+	--- Call Update manually to refresh its size and transform.
 	--- @return Component3D this object
 	Enable: (self: Component3D) -> Component3D,
+	--- Refreshes canvas size, backing part size, and world-space transform.
+	--- Call this from RenderStepped to match the original automatic behavior.
+	--- @return Component3D this object
+	Update: (self: Component3D) -> Component3D,
 	--- Enables projection with wrapper frames that preserve nested layout behavior.
 	--- @return Component3D this object
 	EnableCompatibility: (self: Component3D) -> Component3D,

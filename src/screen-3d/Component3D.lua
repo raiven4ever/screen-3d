@@ -1,6 +1,4 @@
 --!strict
-local RunService = game:GetService("RunService")
-
 local Types = require(script.Parent.Types)
 
 type Screen3D = Types.Screen3D
@@ -24,14 +22,13 @@ function Component3D.new(component_2d: GuiObject, screen_3d: Screen3D): Componen
 
 		Component2D = component_2d,
 		SurfaceGui = nil,
+		SurfacePart = nil,
 
 		Parent3D = nil,
 		Screen3D = screen_3d,
 
-		Offset = CFrame.new(),
+		Offset = CFrame.identity,
 		ViewportSize = screen_3d:GetIntendedCanvasSize(),
-
-		Conn = nil,
 	}, Component3D) :: any
 
 	self.ViewportSize = self:GetViewportSize()
@@ -100,45 +97,47 @@ function Component3D:Enable(): Component3D
 	surface_gui.AlwaysOnTop = true
 
 	this.SurfaceGui = surface_gui
+	this.SurfacePart = surface_part
 
 	this.Component2D.Parent = this.SurfaceGui
 
-	this.Conn = game:GetService("HttpService"):GenerateGUID(false)
-	RunService:BindToRenderStep(this.Conn, Enum.RenderPriority.Last.Value + 2, function()
-		if this.Conn and not (this.SurfaceGui and surface_part) then
-			RunService:UnbindFromRenderStep(this.Conn)
-			return
-		end
+	return this
+end
 
-		local viewport_size = this:GetViewportSize()
+function Component3D:Update(): Component3D
+	local this = self :: Component3D
 
-		if
-			this.CompatibilityEnabled
-			and this.Parent2D
-			and this.Parent3D
-			and this.Parent3D.Parent2D
-			and this.CompatibilityParent2D
-		then
-			local compatibility_parent = this.CompatibilityParent2D
+	if not this.Enabled or not (this.Component2D and this.SurfaceGui and this.SurfacePart) then
+		return this
+	end
 
-			this.Parent3D.Parent2D.AnchorPoint = this.Component2D.AnchorPoint
+	if
+		this.CompatibilityEnabled
+		and this.Parent2D
+		and this.Parent3D
+		and this.Parent3D.Parent2D
+		and this.CompatibilityParent2D
+	then
+		local compatibility_parent = this.CompatibilityParent2D
 
-			this.Parent3D.Parent2D.Position = this.Component2D.Position
-			this.Parent2D.Position =
-				UDim2.fromOffset(-this.Component2D.AbsolutePosition.X, -this.Component2D.AbsolutePosition.Y)
+		this.Parent3D.Parent2D.AnchorPoint = this.Component2D.AnchorPoint
 
-			this.Parent2D.Size =
-				UDim2.fromOffset(compatibility_parent.AbsoluteSize.X, compatibility_parent.AbsoluteSize.Y)
-			this.Parent3D.Parent2D.Size =
-				UDim2.fromOffset(this.Component2D.AbsoluteSize.X, this.Component2D.AbsoluteSize.Y)
-		end
+		this.Parent3D.Parent2D.Position = this.Component2D.Position
+		this.Parent2D.Position =
+			UDim2.fromOffset(-this.Component2D.AbsolutePosition.X, -this.Component2D.AbsolutePosition.Y)
 
-		this.ViewportSize = viewport_size
+		this.Parent2D.Size =
+			UDim2.fromOffset(compatibility_parent.AbsoluteSize.X, compatibility_parent.AbsoluteSize.Y)
+		this.Parent3D.Parent2D.Size =
+			UDim2.fromOffset(this.Component2D.AbsoluteSize.X, this.Component2D.AbsoluteSize.Y)
+	end
 
-		surface_gui.CanvasSize = viewport_size
-		surface_part.Size = this:GetStudsScreenSize(viewport_size)
-		surface_part.CFrame = this:ReadWorldCFrame()
-	end)
+	local viewport_size = this:GetViewportSize()
+
+	this.ViewportSize = viewport_size
+	this.SurfaceGui.CanvasSize = viewport_size
+	this.SurfacePart.Size = this:GetStudsScreenSize(viewport_size)
+	this.SurfacePart.CFrame = this:ReadWorldCFrame()
 
 	return this
 end
@@ -152,10 +151,6 @@ function Component3D:Disable(): Component3D
 
 	this.Enabled = false
 
-	if this.Conn then
-		RunService:UnbindFromRenderStep(this.Conn)
-	end
-
 	if this.Component2D then
 		if this.CompatibilityEnabled then
 			this.Component2D.Parent = this.CompatibilityParent2D or this.Screen3D.RootGui
@@ -167,6 +162,9 @@ function Component3D:Disable(): Component3D
 	if this.SurfaceGui then
 		this.SurfaceGui:Destroy()
 	end
+
+	this.SurfaceGui = nil
+	this.SurfacePart = nil
 
 	return this
 end
