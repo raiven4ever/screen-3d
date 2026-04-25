@@ -1,7 +1,7 @@
 [package]
 name = "raiven4ever/screen-3d"
 description = "Fork of CatGuyMoment/Screen3D, the 3D UI framework from the Roblox DevForum Screen3D post"
-version = "0.1.0"
+version = "0.1.1"
 license = "Unlicense"
 authors = ["raiven4ever"]
 realm = "shared"
