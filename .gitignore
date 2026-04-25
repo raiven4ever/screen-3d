@@ -1,0 +1,10 @@
+# Project place file
+/Screen3D.rbxlx
+
+# Roblox Studio lock files
+/*.rbxlx.lock
+/*.rbxl.lock
+
+sourcemap.json
+
+.ps_profile.ps1
